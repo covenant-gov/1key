@@ -6,7 +6,7 @@
   "scripts": {
     "install:all": "cd aztec-network && yarn install && cd ../tauri-app && yarn install",
     "install": "yarn install:all",
-    "build:aztec": "cd aztec-network && yarn compile",
+    "build:aztec": "cd aztec-network && yarn clean && yarn compile && yarn codegen",
     "build:tauri": "cd tauri-app && yarn tauri build",
     "build": "yarn build:aztec && yarn build:tauri",
     "dev:aztec": "cd aztec-network && yarn test",

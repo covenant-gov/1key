@@ -31,6 +31,7 @@ src-tauri/gen/
 # Aztec/Noir specific
 artifacts/
 codegenCache.json
+pxe-test/
 
 # Editor directories and files
 .vscode/*
