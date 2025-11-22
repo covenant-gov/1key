@@ -1,57 +1,39 @@
 use aztec::macros::aztec;
 pub mod test;
+pub mod types;
 
 #[aztec]
-pub contract Counter {
+pub contract PasswordManager {
     // aztec library imports
     use aztec::{
         macros::{functions::{external, initializer, internal, view}, storage::storage},
         protocol_types::address::AztecAddress,
-        state_vars::{PublicImmutable, PublicMutable},
+        state_vars::{PublicImmutable, PublicMutable, PrivateSet, Map},
+        note::note_header::NoteHeader,
     };
+    use field_compressed_string::FieldCompressedString;
+    use crate::types::non_transferable_note::PasswordEntryNote;
 
-    // @param owner The address of the owner
-    // @param counter A numerical value
+    // @param admin The address of the admin
+    // @param password_entries_map Maps hash of entry name (e.g., "Bank Account 1") to password entry note
     #[storage]
     struct Storage<Context> {
-        owner: PublicImmutable<AztecAddress, Context>,
-        counter: PublicMutable<u128, Context>,
+        admin: PublicMutable<AztecAddress, Context>,
+        password_entries_map: Map<Field, PasswordEntryNote, Context>,
     }
 
     /// @dev Initialize the contract
-    /// @param owner The address of the owner
+    /// @param admin The address of the admin
     #[external("public")]
     #[initializer]
-    fn constructor(owner: AztecAddress) {
-        storage.owner.initialize(owner);
+    fn constructor(admin: AztecAddress) {
+        storage.admin.write(admin);
     }
 
-    /// @dev Retrieves the owner of the contract
-    /// @return The owner of the contract
+    /// @dev Retrieves the admin of the contract
+    /// @return The admin of the contract
     #[external("public")]
-    fn get_owner() -> AztecAddress {
-        storage.owner.read()
-    }
-
-    /// @dev Increments the counter
-    #[external("private")]
-    fn increment() {
-        Counter::at(context.this_address()).increment_internal().enqueue(&mut context);
-    }
-
-    /// @dev Retrieves the counter value
-    /// @return The current counter value
-    #[external("public")]
-    #[view]
-    fn get_counter() -> u128 {
-        storage.counter.read()
-    }
-
-    /// @dev Increments the counter
-    #[external("public")]
-    #[internal]
-    fn increment_internal() {
-        let current_value = storage.counter.read();
-        storage.counter.write(current_value + 1);
+    fn get_admin() -> AztecAddress {
+        storage.admin.read()
     }
 }
