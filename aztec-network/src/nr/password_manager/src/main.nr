@@ -26,6 +26,7 @@ pub contract PasswordManager {
     #[storage]
     struct Storage<Context> {
         password_entries: Map<AztecAddress, PrivateSet<PasswordEntryNote, Context>, Context>,
+        shared_password_entries: Map<AztecAddress, PrivateSet<PasswordEntryNote, Context>, Context>,
         uid: Map<Field, PublicMutable<bool, Context>, Context>,
     }
 
@@ -40,12 +41,25 @@ pub contract PasswordManager {
       randomness: Field,
     ) {
         _validate_private_auth(&mut context, owner);
-
         PasswordManager::at(context.this_address()).set_uid_exists_internal(id).enqueue(&mut context);
-
         storage.password_entries.at(owner)
           .insert(PasswordEntryNote::new(label, password, owner, id, randomness))
           .emit(owner, MessageDelivery.CONSTRAINED_ONCHAIN);
+    }
+
+    #[external("private")]
+    fn update_password_entry(
+      label: FieldCompressedString,
+      password: FieldCompressedString,
+      owner: AztecAddress,
+      id: Field,
+      randomness: Field,
+    ) {
+      _validate_private_auth(&mut context, owner);
+      _delete_password_entry_internal(storage.password_entries.at(owner), id);
+      storage.password_entries.at(owner)
+        .insert(PasswordEntryNote::new(label, password, owner, id, randomness))
+        .emit(owner, MessageDelivery.CONSTRAINED_ONCHAIN);
     }
 
     #[external("private")]
@@ -54,15 +68,38 @@ pub contract PasswordManager {
       id: Field,
     ) {
         _validate_private_auth(&mut context, owner);
-
-        let mut options = NoteGetterOptions::new();
-        options = options.select(PasswordEntryNote::properties().id, Comparator.EQ, id);
-        options = options.set_limit(1);
-        
-        let notes = storage.password_entries.at(owner).pop_notes(options);
-
-        assert(notes.len() == 1, "password entry not found");
+        _delete_password_entry_internal(storage.password_entries.at(owner), id);
         PasswordManager::at(context.this_address()).set_uid_not_exists_internal(id).enqueue(&mut context);
+    }
+
+    #[external("private")]
+    fn share_password_entry(
+      owner: AztecAddress,
+      id: Field,
+      recipient: AztecAddress,
+    ) {
+        _validate_private_auth(&mut context, owner);
+    
+        let notes = storage.password_entries.at(owner).get_notes(NoteGetterOptions::new()
+          .select(PasswordEntryNote::properties().id, Comparator.EQ, id)
+          .set_limit(1)
+        );
+        assert(notes.len() == 1, "password entry not found");
+        let shared_note = notes.get_unchecked(0).note.share(recipient);
+        
+        storage.shared_password_entries.at(recipient)
+          .insert(shared_note)
+          .emit(recipient, MessageDelivery.CONSTRAINED_ONCHAIN);
+    }
+
+    #[external("private")]
+    fn unshare_password_entry(
+      owner: AztecAddress,
+      id: Field,
+      recipient: AztecAddress,
+    ) {
+        _validate_private_auth(&mut context, owner);
+        _delete_password_entry_internal(storage.shared_password_entries.at(recipient), id);
     }
 
     // --- Unconstrained ---
@@ -76,13 +113,52 @@ pub contract PasswordManager {
       let mut options = NoteViewerOptions::new();
       let passwords = storage.password_entries.at(owner).view_notes(options.set_offset(offset));
       let mut ids = [0; MAX_NOTES_PER_PAGE];
-            for i in 0..options.limit {
-            if i < passwords.len() {
-              ids[i] = passwords.get_unchecked(i).get_id();
-            }
+      for i in 0..options.limit {
+        if i < passwords.len() {
+          ids[i] = passwords.get_unchecked(i).get_id();
+        }
+      }
+      let page_limit_reached = passwords.len() == options.limit;
+      (ids, page_limit_reached)
+    }
+
+    #[external("utility")]
+    unconstrained fn get_sharedpassword_entry_ids(
+      recipient: AztecAddress,
+      page_index: u32,
+    ) -> ([Field; MAX_NOTES_PER_PAGE], bool) {
+      let offset = page_index * MAX_NOTES_PER_PAGE;
+      let mut options = NoteViewerOptions::new();
+      let passwords = storage.shared_password_entries.at(recipient).view_notes(options.set_offset(offset));
+      let mut ids = [0; MAX_NOTES_PER_PAGE];
+      for i in 0..options.limit {
+        if i < passwords.len() {
+          ids[i] = passwords.get_unchecked(i).get_id();
+        }
+      }
+      let page_limit_reached = passwords.len() == options.limit;
+      (ids, page_limit_reached)
+    }
+
+    #[external("utility")]
+    unconstrained fn get_sharedpassword_entry_ids_by_owner(
+      recipient: AztecAddress,
+      owner: AztecAddress,
+      page_index: u32,
+    ) -> ([Field; MAX_NOTES_PER_PAGE], bool) {
+      let offset = page_index * MAX_NOTES_PER_PAGE;
+      let mut options = NoteViewerOptions::new();
+      let passwords = storage.shared_password_entries.at(recipient).view_notes(options.set_offset(offset));
+      let mut ids = [0; MAX_NOTES_PER_PAGE];
+      for i in 0..options.limit {
+        if i < passwords.len() {
+          if (passwords.get_unchecked(i).get_owner() == owner) {
+            ids[i] = passwords.get_unchecked(i).get_id();
           }
-          let page_limit_reached = passwords.len() == options.limit;
-          (ids, page_limit_reached)
+        }
+      }
+      let page_limit_reached = passwords.len() == options.limit;
+      (ids, page_limit_reached)
     }
 
     // --- Public ---
@@ -101,6 +177,17 @@ pub contract PasswordManager {
     }
 
     // --- Library ---
+
+    #[contract_library_method]
+    fn _delete_password_entry_internal(
+      notes: PrivateSet<PasswordEntryNote, &mut PrivateContext>,
+      id: Field,
+      ) {        
+        let notes = notes.pop_notes(NoteGetterOptions::new()
+          .select(PasswordEntryNote::properties().id, Comparator.EQ, id)
+          .set_limit(1));
+        assert(notes.len() == 1, "password entry not found");
+    }
 
     #[contract_library_method]
     fn _validate_private_auth(

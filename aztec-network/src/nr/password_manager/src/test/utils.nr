@@ -25,7 +25,7 @@ pub unconstrained fn setup_contract(
 
 pub unconstrained fn deploy_contract(
     env: &mut TestEnvironment,
-    owner: AztecAddress,
+    _owner: AztecAddress,
 ) -> AztecAddress {
     let contract_address = env.deploy("@password_manager/PasswordManager");
 
