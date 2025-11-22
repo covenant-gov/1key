@@ -27,9 +27,7 @@ pub unconstrained fn deploy_contract(
     env: &mut TestEnvironment,
     owner: AztecAddress,
 ) -> AztecAddress {
-    let initializer_call_interface = PasswordManager::interface().constructor(owner);
-    let contract_address =
-        env.deploy("PasswordManager").with_public_initializer(owner, initializer_call_interface);
+    let contract_address = env.deploy("@password_manager/PasswordManager");
 
     contract_address
 }

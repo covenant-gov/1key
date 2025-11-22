@@ -10,12 +10,13 @@ pub struct PasswordEntryNote {
     label: FieldCompressedString,
     password: FieldCompressedString,
     owner: AztecAddress,
+    id: Field,
     randomness: Field,
 }
 
 impl PasswordEntryNote {
-    pub fn new(label: FieldCompressedString, password: FieldCompressedString, owner: AztecAddress, randomness: Field) -> Self {
-        Self { label, password, owner, randomness }
+    pub fn new(label: FieldCompressedString, password: FieldCompressedString, owner: AztecAddress, id: Field, randomness: Field) -> Self {
+        Self { label, password, owner, id, randomness }
     }
 
     pub fn get_label(self) -> FieldCompressedString {
@@ -24,5 +25,9 @@ impl PasswordEntryNote {
 
     pub fn get_password(self) -> FieldCompressedString {
         self.password
+    }
+
+    pub fn get_id(self) -> Field {
+        self.id
     }
 }
