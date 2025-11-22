@@ -1,0 +1,25 @@
+{
+  "name": "1key",
+  "version": "0.1.0",
+  "private": true,
+  "description": "1Key - Tauri app with Aztec network integration",
+  "scripts": {
+    "install:all": "cd aztec-network && yarn install && cd ../tauri-app && yarn install",
+    "install": "yarn install:all",
+    "build:aztec": "cd aztec-network && yarn compile",
+    "build:tauri": "cd tauri-app && yarn tauri build",
+    "build": "yarn build:aztec && yarn build:tauri",
+    "dev:aztec": "cd aztec-network && yarn test",
+    "dev:tauri": "cd tauri-app && yarn tauri dev",
+    "test:aztec": "cd aztec-network && yarn test",
+    "clean:aztec": "cd aztec-network && yarn clean",
+    "clean:tauri": "rm -rf tauri-app/src-tauri/target tauri-app/src-tauri/gen",
+    "clean": "yarn clean:aztec && yarn clean:tauri"
+  },
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=22.0.0",
+    "yarn": ">=1.22.0"
+  }
+}
+

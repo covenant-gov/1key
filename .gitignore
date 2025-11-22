@@ -28,6 +28,10 @@ Cargo.lock
 src-tauri/target/
 src-tauri/gen/
 
+# Aztec/Noir specific
+artifacts/
+codegenCache.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
