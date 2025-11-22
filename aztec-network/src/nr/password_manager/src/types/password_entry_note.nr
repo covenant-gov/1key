@@ -7,17 +7,18 @@ use compressed_string::FieldCompressedString;
 #[derive(Deserialize, Eq, Packable, Serialize)]
 #[note]
 pub struct PasswordEntryNote {
-    password: FieldCompressedString,
+    entry_name: FieldCompressedString,
     owner: AztecAddress,
+    id: Field,
     randomness: Field,
 }
 
 impl PasswordEntryNote {
-    pub fn new(password: FieldCompressedString, owner: AztecAddress, randomness: Field) -> Self {
-        Self { password, owner, randomness }
+    pub fn new(entry_name: FieldCompressedString, owner: AztecAddress, id: Field, randomness: Field) -> Self {
+        Self { entry_name, owner, id, randomness }
     }
 
-    pub fn get_password(self) -> FieldCompressedString {
-        self.password
+    pub fn get_entry_name(self) -> FieldCompressedString {
+        self.entry_name
     }
 }
