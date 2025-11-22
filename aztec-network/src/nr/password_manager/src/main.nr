@@ -10,11 +10,15 @@ pub contract PasswordManager {
         macros::{functions::{external, internal}, storage::storage},
         messages::message_delivery::MessageDelivery,
         note::{
-            constants::MAX_NOTES_PER_PAGE, note_viewer_options::NoteViewerOptions,
+            constants::MAX_NOTES_PER_PAGE,
+            note_getter_options::NoteGetterOptions,
+            note_interface::NoteProperties,
+            note_viewer_options::NoteViewerOptions,
         },
         protocol_types::address::AztecAddress,
         state_vars::{PublicMutable, PrivateSet, Map},
         context::PrivateContext,
+        utils::comparison::Comparator,
     };
     use compressed_string::FieldCompressedString;
     use crate::types::password_entry_note::PasswordEntryNote;
@@ -24,6 +28,8 @@ pub contract PasswordManager {
         password_entries: Map<AztecAddress, PrivateSet<PasswordEntryNote, Context>, Context>,
         uid: Map<Field, PublicMutable<bool, Context>, Context>,
     }
+
+    // --- Private ---
 
     #[external("private")]
     fn create_password_entry(
@@ -35,12 +41,31 @@ pub contract PasswordManager {
     ) {
         _validate_private_auth(&mut context, owner);
 
-        PasswordManager::at(context.this_address()).set_uid_exists(id).enqueue(&mut context);
+        PasswordManager::at(context.this_address()).set_uid_exists_internal(id).enqueue(&mut context);
 
         storage.password_entries.at(owner)
           .insert(PasswordEntryNote::new(label, password, owner, id, randomness))
           .emit(owner, MessageDelivery.CONSTRAINED_ONCHAIN);
     }
+
+    #[external("private")]
+    fn delete_password_entry(
+      owner: AztecAddress,
+      id: Field,
+    ) {
+        _validate_private_auth(&mut context, owner);
+
+        let mut options = NoteGetterOptions::new();
+        options = options.select(PasswordEntryNote::properties().id, Comparator.EQ, id);
+        options = options.set_limit(1);
+        
+        let notes = storage.password_entries.at(owner).pop_notes(options);
+
+        assert(notes.len() == 1, "password entry not found");
+        PasswordManager::at(context.this_address()).set_uid_not_exists_internal(id).enqueue(&mut context);
+    }
+
+    // --- Unconstrained ---
 
     #[external("utility")]
     unconstrained fn get_password_entry_ids(
@@ -60,12 +85,22 @@ pub contract PasswordManager {
           (ids, page_limit_reached)
     }
 
+    // --- Public ---
+
     #[external("public")]
     #[internal]
-    fn set_uid_exists(id: Field) {
+    fn set_uid_exists_internal(id: Field) {
         assert(!storage.uid.at(id).read(), "id already exists");
         storage.uid.at(id).write(true);
     }
+
+    #[external("public")]
+    #[internal]
+    fn set_uid_not_exists_internal(id: Field) {
+        storage.uid.at(id).write(false);
+    }
+
+    // --- Library ---
 
     #[contract_library_method]
     fn _validate_private_auth(
