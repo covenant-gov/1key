@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "src/nr/counter_contract",
+    "src/nr/password_manager",
 ]
 
 [benchmark]
-counter = "benchmarks/counter.benchmark.ts"
+password_manager = "benchmarks/password_manager.benchmark.ts"
