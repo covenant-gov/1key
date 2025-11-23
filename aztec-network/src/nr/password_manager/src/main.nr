@@ -4,7 +4,7 @@ pub mod types;
 
 #[aztec]
 pub contract PasswordManager {
-    // aztec library imports
+    // --- Aztec Library Imports ---
     use aztec::{
         authwit::auth::assert_current_call_valid_authwit,
         macros::{functions::{external, internal}, storage::storage},
@@ -22,7 +22,12 @@ pub contract PasswordManager {
     };
     use compressed_string::FieldCompressedString;
     use crate::types::password_entry_note::PasswordEntryNote;
+
+    // --- Storage ---
     
+    /// @param password_entries A map from address to a private set of password entries owned by that address
+    /// @param shared_password_entries A map from address to a private set of password entries shared with that address
+    /// @param uid A map from password entry ID to a boolean indicating if the ID exists
     #[storage]
     struct Storage<Context> {
         password_entries: Map<AztecAddress, PrivateSet<PasswordEntryNote, Context>, Context>,
@@ -30,8 +35,17 @@ pub contract PasswordManager {
         uid: Map<Field, PublicMutable<bool, Context>, Context>,
     }
 
-    // --- Private ---
+    /** ==========================================================
+     * ========================= PRIVATE =========================
+     * ======================================================== */
 
+    /// @notice Creates a new encrypted password entry for the owner
+    /// @dev Inserts a password entry note into the owner's private set and marks the ID as existing
+    /// @param label The label/name of the password entry
+    /// @param password The password value
+    /// @param owner The address that owns this password entry
+    /// @param id The unique identifier of this password entry
+    /// @param randomness Random value to protect against note hash preimage attacks
     #[external("private")]
     fn create_password_entry(
       label: FieldCompressedString,
@@ -47,6 +61,13 @@ pub contract PasswordManager {
           .emit(owner, MessageDelivery.CONSTRAINED_ONCHAIN);
     }
 
+    /// @notice Updates an existing password entry with new label and password
+    /// @dev Removes the old password entry and inserts a new one with the same ID
+    /// @param label The new label/name of the password entry
+    /// @param password The new encrypted password value
+    /// @param owner The address of the owner of the password entry
+    /// @param id The unique identifier of the password entry to update
+    /// @param randomness Random value to protect against note hash preimage attacks
     #[external("private")]
     fn update_password_entry(
       label: FieldCompressedString,
@@ -62,6 +83,10 @@ pub contract PasswordManager {
         .emit(owner, MessageDelivery.CONSTRAINED_ONCHAIN);
     }
 
+    /// @notice Deletes a password entry by removing it from the owner's private set
+    /// @dev Nullifies the password entry note and marks the ID as not existing
+    /// @param owner The address of the owner of the password entry
+    /// @param id The unique identifier of the password entry to delete
     #[external("private")]
     fn delete_password_entry(
       owner: AztecAddress,
@@ -72,6 +97,11 @@ pub contract PasswordManager {
         PasswordManager::at(context.this_address()).set_uid_not_exists_internal(id).enqueue(&mut context);
     }
 
+    /// @notice Shares a password entry with another address
+    /// @dev Retrieves the password entry from owner's set and creates a shared copy for the recipient
+    /// @param owner The address of the owner who is sharing the password entry
+    /// @param id The unique identifier of the password entry to share
+    /// @param recipient The address that will receive the shared password entry
     #[external("private")]
     fn share_password_entry(
       owner: AztecAddress,
@@ -92,6 +122,11 @@ pub contract PasswordManager {
           .emit(recipient, MessageDelivery.CONSTRAINED_ONCHAIN);
     }
 
+    /// @notice Revokes access to a shared password entry
+    /// @dev Removes the shared password entry from the recipient's private set
+    /// @param owner The address of the owner who is revoking access
+    /// @param id The unique identifier of the password entry to unshare
+    /// @param recipient The address that will lose access to the shared password entry
     #[external("private")]
     fn unshare_password_entry(
       owner: AztecAddress,
@@ -102,8 +137,15 @@ pub contract PasswordManager {
         _delete_password_entry_internal(storage.shared_password_entries.at(recipient), id);
     }
 
-    // --- Unconstrained ---
+    /** ==========================================================
+     * ===================== UNCONSTRAINED ======================
+     * ======================================================== */
 
+    /// @notice Retrieves a paginated list of password entry IDs for an owner
+    /// @dev Returns an array of password entry IDs and a boolean indicating if more pages exist
+    /// @param owner The address of the owner whose password entry IDs to retrieve
+    /// @param page_index The page index (0-based) for pagination
+    /// @return A tuple containing an array of password entry IDs and a boolean indicating if the page limit was reached
     #[external("utility")]
     unconstrained fn get_password_entry_ids(
       owner: AztecAddress,
@@ -122,6 +164,11 @@ pub contract PasswordManager {
       (ids, page_limit_reached)
     }
 
+    /// @notice Retrieves a paginated list of shared password entry IDs for a recipient
+    /// @dev Returns an array of password entry IDs that have been shared with the recipient
+    /// @param recipient The address of the recipient whose shared password entry IDs to retrieve
+    /// @param page_index The page index (0-based) for pagination
+    /// @return A tuple containing an array of password entry IDs and a boolean indicating if the page limit was reached
     #[external("utility")]
     unconstrained fn get_sharedpassword_entry_ids(
       recipient: AztecAddress,
@@ -140,6 +187,12 @@ pub contract PasswordManager {
       (ids, page_limit_reached)
     }
 
+    /// @notice Retrieves a paginated list of shared password entry IDs filtered by the original owner
+    /// @dev Returns an array of password entry IDs that were shared by a specific owner with the recipient
+    /// @param recipient The address of the recipient whose shared password entry IDs to retrieve
+    /// @param owner The address of the original owner to filter by
+    /// @param page_index The page index (0-based) for pagination
+    /// @return A tuple containing an array of password entry IDs and a boolean indicating if the page limit was reached
     #[external("utility")]
     unconstrained fn get_sharedpassword_entry_ids_by_owner(
       recipient: AztecAddress,
@@ -161,8 +214,13 @@ pub contract PasswordManager {
       (ids, page_limit_reached)
     }
 
-    // --- Public ---
+    /** ==========================================================
+     * ========================= PUBLIC =========================
+     * ======================================================== */
 
+    /// @notice Marks a password entry ID as existing
+    /// @dev Internal function called when creating a password entry to prevent ID collisions
+    /// @param id The unique identifier to mark as existing
     #[external("public")]
     #[internal]
     fn set_uid_exists_internal(id: Field) {
@@ -170,14 +228,23 @@ pub contract PasswordManager {
         storage.uid.at(id).write(true);
     }
 
+    /// @notice Marks a password entry ID as not existing
+    /// @dev Internal function called when deleting a password entry to free up the ID
+    /// @param id The unique identifier to mark as not existing
     #[external("public")]
     #[internal]
     fn set_uid_not_exists_internal(id: Field) {
         storage.uid.at(id).write(false);
     }
 
-    // --- Library ---
+    /** ==========================================================
+     * ========================= LIBRARY =========================
+     * ======================================================== */
 
+    /// @notice Internal helper to delete a password entry from a private set
+    /// @dev Removes and nullifies a password entry note matching the given ID
+    /// @param notes The private set to remove the password entry from
+    /// @param id The unique identifier of the password entry to delete
     #[contract_library_method]
     fn _delete_password_entry_internal(
       notes: PrivateSet<PasswordEntryNote, &mut PrivateContext>,
@@ -189,6 +256,10 @@ pub contract PasswordManager {
         assert(notes.len() == 1, "password entry not found");
     }
 
+    /// @notice Validates that a private function call is authorized
+    /// @dev Checks if the message sender matches the 'from' address, or validates an auth witness if different
+    /// @param context The private context for the function call
+    /// @param from The address that should be authorized to perform the action
     #[contract_library_method]
     fn _validate_private_auth(
       context: &mut PrivateContext, 
