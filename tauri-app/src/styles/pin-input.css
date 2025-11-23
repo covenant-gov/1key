@@ -1,0 +1,135 @@
+/* PIN Input Styles */
+.pin-input-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.pin-input-wrapper {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.pin-box {
+  width: 3.5rem;
+  height: 3.5rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  background-color: #ffffff;
+  color: #000000;
+  transition: all 0.2s ease;
+  outline: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Empty state (outline) */
+.pin-box.empty {
+  border-color: #d0d0d0;
+  background-color: #ffffff;
+}
+
+/* Filled state (solid black) */
+.pin-box.filled {
+  border-color: #000000;
+  background-color: #000000;
+  color: #ffffff;
+}
+
+/* Focus state */
+.pin-box:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+  transform: scale(1.05);
+}
+
+/* Disabled state */
+.pin-box:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+}
+
+/* Error state */
+.pin-box.error {
+  border-color: #ff4444;
+  animation: shake 0.5s;
+}
+
+/* Shake animation */
+.pin-input-wrapper.shake {
+  animation: shake 0.5s;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+/* Error message */
+.pin-error {
+  color: #ff4444;
+  font-size: 0.875rem;
+  text-align: center;
+  min-height: 1.25rem;
+  transition: opacity 0.2s ease;
+}
+
+.pin-error.error-visible {
+  opacity: 1;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .pin-box {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.25rem;
+  }
+
+  .pin-input-wrapper {
+    gap: 0.5rem;
+  }
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+  .pin-box {
+    border-color: #404040;
+    background-color: #1a1a1a;
+    color: #ffffff;
+  }
+
+  .pin-box.empty {
+    border-color: #404040;
+    background-color: #1a1a1a;
+  }
+
+  .pin-box.filled {
+    border-color: #ffffff;
+    background-color: #ffffff;
+    color: #000000;
+  }
+
+  .pin-box:focus {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+  }
+}
+
