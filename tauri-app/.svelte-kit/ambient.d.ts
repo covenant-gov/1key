@@ -77,6 +77,7 @@ declare module '$env/static/private' {
 	export const PWD: string;
 	export const npm_package_scripts_preview: string;
 	export const npm_lifecycle_event: string;
+	export const npm_package_resolutions__noble_hashes: string;
 	export const npm_package_scripts_dev_tauri: string;
 	export const npm_package_scripts_install_all: string;
 	export const npm_package_devDependencies__sveltejs_vite_plugin_svelte: string;
@@ -201,6 +202,7 @@ declare module '$env/dynamic/private' {
 		PWD: string;
 		npm_package_scripts_preview: string;
 		npm_lifecycle_event: string;
+		npm_package_resolutions__noble_hashes: string;
 		npm_package_scripts_dev_tauri: string;
 		npm_package_scripts_install_all: string;
 		npm_package_devDependencies__sveltejs_vite_plugin_svelte: string;

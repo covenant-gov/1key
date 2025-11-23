@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
+use std::io::{Write, BufRead, BufReader};
+use std::sync::Mutex;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EncryptedWallet {
@@ -192,5 +195,139 @@ pub fn delete_wallet() -> Result<(), String> {
             .map_err(|e| format!("Failed to delete wallet: {}", e))?;
     }
     Ok(())
+}
+
+// Sidecar communication helpers
+#[derive(Serialize, Deserialize, Debug)]
+struct SidecarRequest {
+    id: u64,
+    method: String,
+    params: Option<serde_json::Value>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct SidecarResponse {
+    id: Option<u64>,
+    result: Option<serde_json::Value>,
+    error: Option<SidecarError>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct SidecarError {
+    code: i32,
+    message: String,
+    data: Option<String>,
+}
+
+// Global sidecar process state
+static SIDECAR_COUNTER: Mutex<u64> = Mutex::new(0);
+
+fn call_sidecar(method: &str, params: Option<serde_json::Value>) -> Result<serde_json::Value, String> {
+    // Get sidecar path - in production this would be bundled
+    // For now, we'll use the development path
+    let sidecar_path = if cfg!(debug_assertions) {
+        // Development: use node directly with the script
+        "node"
+    } else {
+        // Production: use bundled sidecar
+        "aztec-sidecar"
+    };
+    
+    let mut counter = SIDECAR_COUNTER.lock().unwrap();
+    *counter += 1;
+    let request_id = *counter;
+    drop(counter);
+    
+    let mut child = if cfg!(debug_assertions) {
+        Command::new(sidecar_path)
+            .arg("../sidecar/aztec-sidecar.js")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| format!("Failed to spawn sidecar: {}", e))?
+    } else {
+        Command::new(sidecar_path)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| format!("Failed to spawn sidecar: {}", e))?
+    };
+    
+    let mut stdin = child.stdin.take().ok_or("Failed to open stdin")?;
+    let stdout = child.stdout.take().ok_or("Failed to open stdout")?;
+    
+    // Send request
+    let request = SidecarRequest {
+        id: request_id,
+        method: method.to_string(),
+        params,
+    };
+    
+    let request_json = serde_json::to_string(&request)
+        .map_err(|e| format!("Failed to serialize request: {}", e))?;
+    
+    writeln!(stdin, "{}", request_json)
+        .map_err(|e| format!("Failed to write to sidecar: {}", e))?;
+    drop(stdin);
+    
+    // Read response
+    let reader = BufReader::new(stdout);
+    
+    for line in reader.lines() {
+        let line = line.map_err(|e| format!("Failed to read from sidecar: {}", e))?;
+        if line.trim().is_empty() {
+            continue;
+        }
+        
+        // Skip ready signal
+        if line.contains("\"ready\"") {
+            continue;
+        }
+        
+        let response: SidecarResponse = serde_json::from_str(&line)
+            .map_err(|e| format!("Failed to parse response: {}", e))?;
+        
+        if let Some(error) = response.error {
+            return Err(format!("Sidecar error: {} (code: {})", error.message, error.code));
+        }
+        
+        if let Some(result) = response.result {
+            return Ok(result);
+        }
+    }
+    
+    Err("No response from sidecar".to_string())
+}
+
+/// Initialize Aztec sidecar
+#[tauri::command]
+pub fn aztec_initialize(node_url: String) -> Result<serde_json::Value, String> {
+    call_sidecar("initialize", Some(serde_json::json!({ "nodeUrl": node_url })))
+}
+
+/// Create Aztec account via sidecar
+#[tauri::command]
+pub fn aztec_create_account() -> Result<serde_json::Value, String> {
+    call_sidecar("createAccount", None)
+}
+
+/// Connect to existing Aztec account via sidecar
+#[tauri::command]
+pub fn aztec_connect_account(credentials: serde_json::Value) -> Result<serde_json::Value, String> {
+    call_sidecar("connectExistingAccount", Some(serde_json::json!({ "credentials": credentials })))
+}
+
+/// Deploy Aztec account via sidecar
+#[tauri::command]
+pub fn aztec_deploy_account() -> Result<serde_json::Value, String> {
+    call_sidecar("deployAccount", None)
+}
+
+/// Test sidecar connection
+#[tauri::command]
+pub fn aztec_test() -> Result<serde_json::Value, String> {
+    call_sidecar("test", None)
 }
 

@@ -4,11 +4,16 @@
   import { PinSetupScreen } from '../screens/pin-setup-screen.js';
   import { UnlockScreen } from '../screens/unlock-screen.js';
   import { walletService } from '../services/wallet.js';
+  import { testAztecImport } from '../lib/aztec-test.js';
 
   let currentScreen = null;
   let hasAccount = false;
 
   onMount(async () => {
+    // Test Aztec.js import first
+    console.log('🧪 Testing Aztec.js import...');
+    await testAztecImport();
+    
     // Check if wallet exists via wallet service
     hasAccount = await checkAccountExists();
 
