@@ -43,6 +43,7 @@ declare module '$env/static/private' {
 	export const TMPDIR: string;
 	export const npm_package_scripts_test_aztec: string;
 	export const npm_config_init_license: string;
+	export const npm_package_devDependencies__vitest_ui: string;
 	export const TERM_PROGRAM_VERSION: string;
 	export const npm_package_scripts_dev: string;
 	export const TAURI_CLI_VERBOSITY: string;
@@ -76,7 +77,9 @@ declare module '$env/static/private' {
 	export const npm_package_scripts_build_aztec: string;
 	export const PWD: string;
 	export const npm_package_scripts_preview: string;
+	export const npm_package_scripts_test_watch: string;
 	export const npm_lifecycle_event: string;
+	export const npm_package_devDependencies_jsdom: string;
 	export const npm_package_resolutions__noble_hashes: string;
 	export const npm_package_scripts_dev_tauri: string;
 	export const npm_package_scripts_install_all: string;
@@ -86,6 +89,7 @@ declare module '$env/static/private' {
 	export const npm_config_version_commit_hooks: string;
 	export const npm_package_scripts_build: string;
 	export const XPC_FLAGS: string;
+	export const npm_package_devDependencies_vitest: string;
 	export const TAURI_ENV_ARCH: string;
 	export const npm_config_bin_links: string;
 	export const npm_config_wrap_output: string;
@@ -97,6 +101,7 @@ declare module '$env/static/private' {
 	export const SHLVL: string;
 	export const npm_package_scripts_benchmark_aztec: string;
 	export const npm_package_type: string;
+	export const npm_package_scripts_test: string;
 	export const npm_config_save_prefix: string;
 	export const npm_config_strict_ssl: string;
 	export const HOMEBREW_PREFIX: string;
@@ -168,6 +173,7 @@ declare module '$env/dynamic/private' {
 		TMPDIR: string;
 		npm_package_scripts_test_aztec: string;
 		npm_config_init_license: string;
+		npm_package_devDependencies__vitest_ui: string;
 		TERM_PROGRAM_VERSION: string;
 		npm_package_scripts_dev: string;
 		TAURI_CLI_VERBOSITY: string;
@@ -201,7 +207,9 @@ declare module '$env/dynamic/private' {
 		npm_package_scripts_build_aztec: string;
 		PWD: string;
 		npm_package_scripts_preview: string;
+		npm_package_scripts_test_watch: string;
 		npm_lifecycle_event: string;
+		npm_package_devDependencies_jsdom: string;
 		npm_package_resolutions__noble_hashes: string;
 		npm_package_scripts_dev_tauri: string;
 		npm_package_scripts_install_all: string;
@@ -211,6 +219,7 @@ declare module '$env/dynamic/private' {
 		npm_config_version_commit_hooks: string;
 		npm_package_scripts_build: string;
 		XPC_FLAGS: string;
+		npm_package_devDependencies_vitest: string;
 		TAURI_ENV_ARCH: string;
 		npm_config_bin_links: string;
 		npm_config_wrap_output: string;
@@ -222,6 +231,7 @@ declare module '$env/dynamic/private' {
 		SHLVL: string;
 		npm_package_scripts_benchmark_aztec: string;
 		npm_package_type: string;
+		npm_package_scripts_test: string;
 		npm_config_save_prefix: string;
 		npm_config_strict_ssl: string;
 		HOMEBREW_PREFIX: string;
