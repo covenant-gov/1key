@@ -58,6 +58,7 @@ declare module '$env/static/private' {
 	export const NVM_DIR: string;
 	export const USER: string;
 	export const npm_package_description: string;
+	export const npm_package_scripts_test_frontend: string;
 	export const TAURI_ENV_TARGET_TRIPLE: string;
 	export const npm_package_scripts_check_watch: string;
 	export const npm_package_scripts_clean_aztec: string;
@@ -67,6 +68,7 @@ declare module '$env/static/private' {
 	export const npm_execpath: string;
 	export const TAURI_ENV_PLATFORM: string;
 	export const npm_package_devDependencies_svelte: string;
+	export const npm_package_scripts_test_frontend_ui: string;
 	export const PATH: string;
 	export const npm_config_argv: string;
 	export const npm_package_scripts_clean_tauri: string;
@@ -123,6 +125,7 @@ declare module '$env/static/private' {
 	export const npm_config_ignore_optional: string;
 	export const npm_config_init_version: string;
 	export const npm_package_scripts_clean: string;
+	export const npm_package_scripts_test_frontend_watch: string;
 	export const npm_package_scripts_check: string;
 	export const npm_config_version_tag_prefix: string;
 	export const npm_node_execpath: string;
@@ -188,6 +191,7 @@ declare module '$env/dynamic/private' {
 		NVM_DIR: string;
 		USER: string;
 		npm_package_description: string;
+		npm_package_scripts_test_frontend: string;
 		TAURI_ENV_TARGET_TRIPLE: string;
 		npm_package_scripts_check_watch: string;
 		npm_package_scripts_clean_aztec: string;
@@ -197,6 +201,7 @@ declare module '$env/dynamic/private' {
 		npm_execpath: string;
 		TAURI_ENV_PLATFORM: string;
 		npm_package_devDependencies_svelte: string;
+		npm_package_scripts_test_frontend_ui: string;
 		PATH: string;
 		npm_config_argv: string;
 		npm_package_scripts_clean_tauri: string;
@@ -253,6 +258,7 @@ declare module '$env/dynamic/private' {
 		npm_config_ignore_optional: string;
 		npm_config_init_version: string;
 		npm_package_scripts_clean: string;
+		npm_package_scripts_test_frontend_watch: string;
 		npm_package_scripts_check: string;
 		npm_config_version_tag_prefix: string;
 		npm_node_execpath: string;

@@ -95,7 +95,8 @@ body {
   margin-top: 1rem;
 }
 
-.create-account-btn {
+.create-account-btn,
+.login-btn {
   width: 100%;
   max-width: 300px;
   padding: 1rem 2rem;
@@ -110,19 +111,22 @@ body {
   font-family: inherit;
 }
 
-.create-account-btn:hover {
+.create-account-btn:hover,
+.login-btn:hover {
   background-color: #333333;
   border-color: #333333;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.create-account-btn:active {
+.create-account-btn:active,
+.login-btn:active {
   transform: translateY(0);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.create-account-btn:disabled {
+.create-account-btn:disabled,
+.login-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
@@ -311,13 +315,15 @@ body {
     border-color: #e0e0e0;
   }
 
-  .create-account-btn {
+  .create-account-btn,
+  .login-btn {
     background-color: #ffffff;
     color: #000000;
     border-color: #ffffff;
   }
 
-  .create-account-btn:hover {
+  .create-account-btn:hover,
+  .login-btn:hover {
     background-color: #e0e0e0;
     border-color: #e0e0e0;
   }

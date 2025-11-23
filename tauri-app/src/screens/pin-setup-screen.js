@@ -8,6 +8,7 @@ export class PinSetupScreen {
     this.onComplete = null;
     this.enteredPin = null;
     this.step = 'enter'; // 'enter' or 'confirm'
+    this.isProcessing = false; // Prevent multiple onComplete calls
   }
 
   // Render the PIN setup screen
@@ -36,13 +37,6 @@ export class PinSetupScreen {
 
           <!-- Error Message -->
           <div id="pin-setup-error" class="error-message" style="display: none;"></div>
-
-          <!-- Action Button -->
-          <div class="account-actions">
-            <button class="create-account-btn" id="setup-submit-btn" style="display: none;">
-              Create Account
-            </button>
-          </div>
         </div>
       </div>
     `;
@@ -71,38 +65,17 @@ export class PinSetupScreen {
 
   // Setup event listeners
   setupEventListeners() {
-    const submitBtn = document.getElementById('setup-submit-btn');
-    
-    submitBtn.addEventListener('click', () => {
-      if (this.step === 'enter') {
-        const pin = this.pinInput.getPinValue();
-        if (this.pinInput.isComplete()) {
-          this.handlePinEntered(pin);
-        }
-      } else if (this.step === 'confirm') {
-        const confirmPin = this.confirmPinInput.getPinValue();
-        if (this.confirmPinInput.isComplete()) {
-          this.handlePinConfirmed(confirmPin);
-        }
-      }
-    });
-
-    // Allow Enter key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        if (this.step === 'enter' && this.pinInput.isComplete()) {
-          const pin = this.pinInput.getPinValue();
-          this.handlePinEntered(pin);
-        } else if (this.step === 'confirm' && this.confirmPinInput.isComplete()) {
-          const confirmPin = this.confirmPinInput.getPinValue();
-          this.handlePinConfirmed(confirmPin);
-        }
-      }
-    });
+    // PIN inputs auto-trigger when complete (handled in onComplete callbacks)
+    // No additional event listeners needed
   }
 
   // Handle PIN entered (first step)
   handlePinEntered(pin) {
+    // Prevent handling if we're already in confirm step or processing
+    if (this.step === 'confirm' || this.isProcessing) {
+      return;
+    }
+
     if (pin.length !== 6) {
       this.showError('PIN must be 6 digits');
       this.pinInput.shake();
@@ -111,16 +84,14 @@ export class PinSetupScreen {
 
     // Store entered PIN
     this.enteredPin = pin;
+    this.step = 'confirm';
     
     // Hide enter section, show confirm section
     const enterSection = document.getElementById('enter-pin-section');
     const confirmSection = document.getElementById('confirm-pin-section');
-    const submitBtn = document.getElementById('setup-submit-btn');
 
     enterSection.style.display = 'none';
     confirmSection.style.display = 'block';
-    submitBtn.style.display = 'block';
-    submitBtn.textContent = 'Create Account';
 
     // Wait for DOM to update, then create and render confirm PIN input
     // Use requestAnimationFrame to ensure DOM is ready
@@ -154,12 +125,16 @@ export class PinSetupScreen {
       }, 100);
     });
 
-    this.step = 'confirm';
     this.hideError();
   }
 
   // Handle PIN confirmed (second step)
   handlePinConfirmed(confirmPin) {
+    // Prevent multiple calls
+    if (this.isProcessing) {
+      return;
+    }
+
     if (confirmPin.length !== 6) {
       this.showError('PIN must be 6 digits');
       this.confirmPinInput.shake();
@@ -178,16 +153,16 @@ export class PinSetupScreen {
     }
 
     // PINs match - proceed with account creation
-    this.hideError();
-    this.disableInputs();
+    // Only proceed if PINs actually match
+    if (confirmPin === this.enteredPin) {
+      this.isProcessing = true;
+      this.hideError();
+      this.disableInputs();
 
-    const submitBtn = document.getElementById('setup-submit-btn');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Creating Account...';
-
-    // Call completion callback
-    if (this.onComplete) {
-      this.onComplete(this.enteredPin);
+      // Call completion callback - this will attempt wallet creation
+      if (this.onComplete) {
+        this.onComplete(this.enteredPin);
+      }
     }
   }
 
@@ -246,14 +221,13 @@ export class PinSetupScreen {
   reset() {
     this.step = 'enter';
     this.enteredPin = null;
+    this.isProcessing = false;
 
     const enterSection = document.getElementById('enter-pin-section');
     const confirmSection = document.getElementById('confirm-pin-section');
-    const submitBtn = document.getElementById('setup-submit-btn');
 
     enterSection.style.display = 'block';
     confirmSection.style.display = 'none';
-    submitBtn.style.display = 'none';
 
     if (this.pinInput) {
       this.pinInput.clear();
@@ -261,6 +235,8 @@ export class PinSetupScreen {
     }
     if (this.confirmPinInput) {
       this.confirmPinInput.clear();
+      // Destroy the confirm PIN input to prevent it from triggering callbacks
+      this.confirmPinInput = null;
     }
 
     this.hideError();

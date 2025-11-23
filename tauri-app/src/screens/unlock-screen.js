@@ -5,8 +5,10 @@ export class UnlockScreen {
     this.container = document.getElementById(containerId);
     this.pinInput = null;
     this.onUnlock = null;
+    this.onReturnHome = null; // Callback to return to home screen
     this.attempts = 0;
     this.maxAttempts = 5;
+    this.maxFailedAttemptsBeforeReturn = 2; // Return home after 2 failed attempts
     this.lockoutTime = 60000; // 1 minute in milliseconds
     this.isLocked = false;
   }
@@ -32,13 +34,6 @@ export class UnlockScreen {
 
           <!-- Lockout Message -->
           <div id="lockout-message" class="lockout-message" style="display: none;"></div>
-
-          <!-- Action Button -->
-          <div class="account-actions">
-            <button class="unlock-btn" id="unlock-btn" style="display: none;">
-              Unlock
-            </button>
-          </div>
         </div>
       </div>
     `;
@@ -58,11 +53,6 @@ export class UnlockScreen {
       onInput: (pin, index) => {
         // Clear error when user starts typing
         this.hideError();
-        // Show unlock button when PIN is being entered
-        const unlockBtn = document.getElementById('unlock-btn');
-        if (pin.length > 0 && unlockBtn) {
-          unlockBtn.style.display = 'block';
-        }
       },
     });
     this.pinInput.render();
@@ -70,22 +60,8 @@ export class UnlockScreen {
 
   // Setup event listeners
   setupEventListeners() {
-    const unlockBtn = document.getElementById('unlock-btn');
-    
-    unlockBtn.addEventListener('click', () => {
-      const pin = this.pinInput.getPinValue();
-      if (this.pinInput.isComplete()) {
-        this.handleUnlock(pin);
-      }
-    });
-
-    // Allow Enter key to unlock
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && this.pinInput && this.pinInput.isComplete()) {
-        const pin = this.pinInput.getPinValue();
-        this.handleUnlock(pin);
-      }
-    });
+    // PIN input auto-triggers unlock when complete (handled in onComplete callback)
+    // No additional event listeners needed
   }
 
   // Handle unlock attempt
@@ -102,11 +78,6 @@ export class UnlockScreen {
 
     // Disable inputs while processing
     this.pinInput.disable();
-    const unlockBtn = document.getElementById('unlock-btn');
-    if (unlockBtn) {
-      unlockBtn.disabled = true;
-      unlockBtn.textContent = 'Unlocking...';
-    }
 
     try {
       // Call unlock callback
@@ -118,30 +89,34 @@ export class UnlockScreen {
         this.hideAttemptsInfo();
       }
     } catch (error) {
-      // Unlock failed
-      this.handleUnlockFailure();
+      // Unlock failed - show specific error message
+      this.handleUnlockFailure(error);
     }
   }
 
   // Handle unlock failure
-  handleUnlockFailure() {
+  handleUnlockFailure(error) {
     this.attempts++;
     const remaining = this.maxAttempts - this.attempts;
 
     // Re-enable inputs
     this.pinInput.enable();
-    const unlockBtn = document.getElementById('unlock-btn');
-    if (unlockBtn) {
-      unlockBtn.disabled = false;
-      unlockBtn.textContent = 'Unlock';
+
+    // After 2 failed attempts, return to home screen
+    if (this.attempts >= this.maxFailedAttemptsBeforeReturn && this.onReturnHome) {
+      this.onReturnHome();
+      return;
     }
 
     if (this.attempts >= this.maxAttempts) {
       // Lock out user
       this.lockOut();
     } else {
-      // Show error and remaining attempts
-      this.showError(`Incorrect PIN. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`);
+      // Show error message - use specific message if available, otherwise generic
+      const errorMessage = error?.message?.includes('Incorrect PIN') 
+        ? 'PIN not recognized in this device'
+        : 'PIN not recognized in this device';
+      this.showError(errorMessage);
       this.showAttemptsInfo(remaining);
       this.pinInput.shake();
       this.pinInput.clear();
@@ -155,12 +130,6 @@ export class UnlockScreen {
   lockOut() {
     this.isLocked = true;
     this.pinInput.disable();
-    
-    const unlockBtn = document.getElementById('unlock-btn');
-    if (unlockBtn) {
-      unlockBtn.disabled = true;
-      unlockBtn.style.display = 'none';
-    }
 
     const lockoutMessage = document.getElementById('lockout-message');
     if (lockoutMessage) {
@@ -191,13 +160,6 @@ export class UnlockScreen {
     this.isLocked = false;
     this.attempts = 0;
     this.pinInput.enable();
-    
-    const unlockBtn = document.getElementById('unlock-btn');
-    if (unlockBtn) {
-      unlockBtn.disabled = false;
-      unlockBtn.style.display = 'block';
-      unlockBtn.textContent = 'Unlock';
-    }
 
     const lockoutMessage = document.getElementById('lockout-message');
     if (lockoutMessage) {
@@ -260,12 +222,6 @@ export class UnlockScreen {
       this.pinInput.enable();
     }
 
-    const unlockBtn = document.getElementById('unlock-btn');
-    if (unlockBtn) {
-      unlockBtn.disabled = false;
-      unlockBtn.textContent = 'Unlock';
-      unlockBtn.style.display = 'none';
-    }
 
     this.hideError();
     this.hideAttemptsInfo();
