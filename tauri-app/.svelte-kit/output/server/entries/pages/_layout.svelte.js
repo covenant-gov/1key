@@ -1,0 +1,1 @@
+import"clsx";function l(t,a,f,i,u){var n=a.$$slots?.[f];n===!0&&(n=a.children),n!==void 0&&n(t,i)}function s(t,a){t.push('<main class="container"><!--[-->'),l(t,a,"default",{}),t.push("<!--]--></main>")}export{s as default};

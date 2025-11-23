@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "identifier": "com.daopunk.tauri-app",
   "build": {
-    "frontendDist": "../src"
+    "beforeDevCommand": "yarn dev",
+    "beforeBuildCommand": "yarn build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../build"
   },
   "app": {
     "withGlobalTauri": true,
@@ -28,6 +31,9 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "resources": [
+      "sidecar/**/*"
     ]
   }
 }

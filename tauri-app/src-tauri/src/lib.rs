@@ -1,14 +1,34 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
+mod commands;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .setup(|app| {
+            #[cfg(desktop)]
+            app.handle()
+                .plugin(tauri_plugin_opener::init())
+                .expect("failed to initialize opener plugin");
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            commands::wallet_exists,
+            commands::store_encrypted_wallet,
+            commands::load_encrypted_wallet,
+            commands::decrypt_wallet_with_pin,
+            commands::encrypt_and_store_wallet,
+            commands::delete_wallet,
+            commands::aztec_initialize,
+            commands::aztec_create_account,
+            commands::aztec_connect_account,
+            commands::aztec_deploy_account,
+            commands::aztec_test,
+            commands::password_manager_deploy,
+            commands::password_manager_create_entry,
+            commands::password_manager_get_entry_ids,
+            commands::password_manager_get_entry_by_id,
+            commands::password_manager_update_entry,
+            commands::password_manager_delete_entry,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
