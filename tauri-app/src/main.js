@@ -5,6 +5,7 @@
 import { InitialScreen } from './screens/initial-screen.js';
 import { PinSetupScreen } from './screens/pin-setup-screen.js';
 import { UnlockScreen } from './screens/unlock-screen.js';
+import { walletService } from './services/wallet.js';
 
 class App {
   constructor() {
@@ -15,7 +16,8 @@ class App {
 
   // Initialize the application
   async init() {
-    this.hasAccount = false; // await this.checkAccountExists();
+    // Check if wallet exists via wallet service
+    this.hasAccount = await this.checkAccountExists();
 
     if (this.hasAccount) {
       this.showUnlockScreen();
@@ -46,19 +48,20 @@ class App {
     // Handle account creation completion
     pinSetupScreen.onComplete = async (pin) => {
       try {
-        console.log('Creating account with PIN:', pin);
-        // TODO: Implement wallet creation with PIN
-        // await this.createAccount(pin);
+        console.log('Creating wallet with PIN:', pin);
         
-        // For now, show success and reset
-        alert('Account created successfully! (Wallet creation will be implemented... WIP!)');
+        // Create wallet via wallet service
+        const wallet = await walletService.createWallet(pin);
         
-        // After account is created, we should show unlock screen next time
-        // For now, just reset
-        this.showInitialScreen();
+        console.log('Wallet created successfully:', wallet.address);
+        alert(`Account created successfully!\n\nAddress: ${wallet.address.substring(0, 10)}...\n\nNext time you open the app, you'll see the unlock screen.`);
+        
+        // Show unlock screen (since wallet now exists)
+        this.hasAccount = true;
+        this.showUnlockScreen();
       } catch (error) {
         console.error('Failed to create account:', error);
-        pinSetupScreen.showError('Failed to create account. Please try again.');
+        pinSetupScreen.showError(error.message || 'Failed to create account. Please try again.');
         pinSetupScreen.enableInputs();
         pinSetupScreen.reset();
       }
@@ -75,16 +78,16 @@ class App {
     // Handle unlock
     unlockScreen.onUnlock = async (pin) => {
       try {
-        console.log('Unlocking with PIN:', pin);
-        // TODO: Unlock wallet with PIN via Rust backend
-        // const wallet = await this.unlockWallet(pin);
+        console.log('Unlocking wallet with PIN:', pin);
         
-        // For now, simulate unlock
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const wallet = await walletService.unlockWallet(pin);
+        console.log('Wallet unlocked successfully:', wallet.address);
         
         // After successful unlock, show main app
         // TODO: Show password manager interface
-        alert('Wallet unlocked! (Password manager will be implemented in Step 7)');
+        alert(`Wallet unlocked!\n\nAddress: ${wallet.address.substring(0, 10)}...\n\nPassword manager will be implemented in Step 7.`);
+        
+        // For now, just reset
         unlockScreen.reset();
       } catch (error) {
         console.error('Failed to unlock:', error);
@@ -98,10 +101,12 @@ class App {
 
   // Check if account exists
   async checkAccountExists() {
-    // TODO: Check with Rust backend
-    // const { invoke } = window.__TAURI__.core;
-    // return await invoke('wallet_exists');
-    return false;
+    try {
+      return await walletService.walletExists();
+    } catch (error) {
+      console.error('Error checking account existence:', error);
+      return false;
+    }
   }
 }
 
