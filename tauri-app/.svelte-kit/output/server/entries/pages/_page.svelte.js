@@ -1,0 +1,1 @@
+import"clsx";const{invoke:a}=window.__TAURI__.core;function d(o,n){o.component(i=>{i.push('<div id="app-container"><div class="loading-state"><h1>1Key</h1> <p>Loading...</p></div></div>')})}export{d as default};
