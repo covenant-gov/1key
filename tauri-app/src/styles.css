@@ -151,6 +151,57 @@ body {
   color: #666666;
 }
 
+/* PIN Setup Screen Styles */
+.pin-setup-screen {
+  width: 100%;
+}
+
+.pin-setup-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 0.25rem;
+}
+
+.section-description {
+  font-size: 0.875rem;
+  color: #666666;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.error-message {
+  color: #ff4444;
+  font-size: 0.875rem;
+  text-align: center;
+  min-height: 1.25rem;
+  padding: 0.5rem;
+  background-color: #fff5f5;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 400px;
+}
+
 /* Dark Mode */
 @media (prefers-color-scheme: dark) {
   :root {
@@ -168,6 +219,19 @@ body {
 
   .account-help-text {
     color: #999999;
+  }
+
+  .section-title {
+    color: #ffffff;
+  }
+
+  .section-description {
+    color: #999999;
+  }
+
+  .error-message {
+    background-color: #3a1f1f;
+    color: #ff6666;
   }
 
   .create-account-btn {

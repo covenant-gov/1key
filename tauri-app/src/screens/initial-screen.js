@@ -76,33 +76,10 @@ export class InitialScreen {
 
   // Handle create account button click
   handleCreateAccount() {
-    const pin = this.pinInput.getPinValue();
-    
-    // Validate PIN
-    if (!this.pinInput.isComplete()) {
-      this.pinInput.showError('Please enter a 6-digit PIN');
-      this.pinInput.shake();
-      return;
-    }
-
-    if (pin.length < 6) {
-      this.pinInput.showError('PIN must be 6 digits');
-      this.pinInput.shake();
-      return;
-    }
-
-    // Clear any errors
     this.pinInput.hideError();
-
-    // Disable inputs while processing
-    this.pinInput.disable();
-    const createBtn = document.getElementById('create-account-btn');
-    createBtn.disabled = true;
-    createBtn.textContent = 'Creating...';
-
-    // Call callback
+    
     if (this.onCreateAccount) {
-      this.onCreateAccount(pin);
+      this.onCreateAccount();
     }
   }
 

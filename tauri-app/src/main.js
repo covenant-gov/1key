@@ -3,6 +3,7 @@
  * 1Key Password Manager
  */
 import { InitialScreen } from './screens/initial-screen.js';
+import { PinSetupScreen } from './screens/pin-setup-screen.js';
 
 class App {
   constructor() {
@@ -27,23 +28,42 @@ class App {
     const initialScreen = new InitialScreen('app');
     initialScreen.render();
 
-    // Handle create account
+    // Handle create account - transition to PIN setup screen
     initialScreen.onCreateAccount = async (pin) => {
+      // Transition to PIN setup screen
+      this.showPinSetupScreen();
+    };
+
+    this.currentScreen = initialScreen;
+  }
+
+  // Show PIN setup screen (with confirmation)
+  showPinSetupScreen() {
+    const pinSetupScreen = new PinSetupScreen('app');
+    pinSetupScreen.render();
+
+    // Handle account creation completion
+    pinSetupScreen.onComplete = async (pin) => {
       try {
         console.log('Creating account with PIN:', pin);
         // TODO: Implement wallet creation with PIN
         // await this.createAccount(pin);
         
-        alert('TODO: Implement wallet creation with PIN');
-        initialScreen.reset();
+        // For now, show success and reset
+        alert('Account created successfully! (Wallet creation will be implemented... WIP!)');
+        
+        // After account is created, we should show unlock screen next time
+        // For now, just reset
+        this.showInitialScreen();
       } catch (error) {
         console.error('Failed to create account:', error);
-        initialScreen.showError('Failed to create account. Please try again.');
-        initialScreen.reset();
+        pinSetupScreen.showError('Failed to create account. Please try again.');
+        pinSetupScreen.enableInputs();
+        pinSetupScreen.reset();
       }
     };
 
-    this.currentScreen = initialScreen;
+    this.currentScreen = pinSetupScreen;
   }
 
   // Show unlock screen (for existing users)
