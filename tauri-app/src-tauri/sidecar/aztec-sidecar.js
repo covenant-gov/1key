@@ -22,7 +22,7 @@ import { getSchnorrAccount } from '@aztec/accounts/schnorr/lazy';
 import { getPXEServiceConfig } from '@aztec/pxe/config';
 import { createPXEService } from '@aztec/pxe/client/lazy';
 import { getInitialTestAccounts } from '@aztec/accounts/testing';
-import { SponsoredFeePaymentMethod } from '@aztec/aztec.js';
+import { SponsoredFeePaymentMethod, Contract } from '@aztec/aztec.js';
 import { siloNullifier } from '@aztec/stdlib/hash';
 
 const PROVER_ENABLED = true;
@@ -33,6 +33,7 @@ let pxe = null;
 let aztecNode = null;
 let accountManager = null;
 let connectedWallet = null;
+let passwordManagerContract = null;
 
 // Read from stdin and write to stdout
 process.stdin.setEncoding('utf8');
@@ -97,6 +98,30 @@ async function handleRequest(request) {
       
       case 'test':
         result = { success: true, message: 'Aztec sidecar is running' };
+        break;
+      
+      case 'deployPasswordManager':
+        result = await deployPasswordManager();
+        break;
+      
+      case 'createPasswordEntry':
+        result = await createPasswordEntry(params.contractAddress, params.label, params.password, params.id, params.randomness);
+        break;
+      
+      case 'getPasswordEntryIds':
+        result = await getPasswordEntryIds(params.contractAddress, params.offset || 0);
+        break;
+      
+      case 'getPasswordEntryById':
+        result = await getPasswordEntryById(params.contractAddress, params.id, params.offset || 0);
+        break;
+      
+      case 'updatePasswordEntry':
+        result = await updatePasswordEntry(params.contractAddress, params.label, params.password, params.id, params.randomness);
+        break;
+      
+      case 'deletePasswordEntry':
+        result = await deletePasswordEntry(params.contractAddress, params.id);
         break;
       
       default:
@@ -246,6 +271,221 @@ async function isInitializationNullifierPublished(node, address) {
   const initNullifier = await siloNullifier(address, address.toField());
   const witness = await node.getNullifierMembershipWitness('latest', initNullifier);
   return !!witness;
+}
+
+// Helper to create FieldCompressedString
+function createCompressedString(str) {
+  const padded = str.padEnd(31, ' ').slice(0, 31);
+  const hash = BigInt(
+    padded
+      .split('')
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  );
+  return { value: hash };
+}
+
+// PasswordManager contract methods
+async function deployPasswordManager() {
+  if (!connectedWallet) {
+    throw new Error('No wallet connected');
+  }
+
+  try {
+    // Load PasswordManagerContract class
+    let PasswordManagerContract;
+    try {
+      const artifactModule = await import('../../../aztec-network/src/artifacts/PasswordManager.js');
+      PasswordManagerContract = artifactModule.PasswordManagerContract;
+    } catch (e) {
+      throw new Error('PasswordManager artifact not found. Please ensure aztec-network artifacts are built.');
+    }
+    
+    const deployerAddress = connectedWallet.getAddress();
+    const tx = await PasswordManagerContract.deploy(connectedWallet)
+      .send({ from: deployerAddress });
+    
+    const contract = await tx.deployed();
+    passwordManagerContract = contract;
+    
+    return {
+      address: contract.address.toString(),
+      txHash: tx.txHash ? tx.txHash.toString() : null,
+    };
+  } catch (error) {
+    logger.error('Failed to deploy PasswordManager', error);
+    throw error;
+  }
+}
+
+async function createPasswordEntry(contractAddress, label, password, id, randomness) {
+  if (!connectedWallet) {
+    throw new Error('No wallet connected');
+  }
+  
+  // Get contract instance if not already set
+  if (!passwordManagerContract || passwordManagerContract.address.toString() !== contractAddress) {
+    let PasswordManagerContract;
+    try {
+      const artifactModule = await import('../../../aztec-network/src/artifacts/PasswordManager.js');
+      PasswordManagerContract = artifactModule.PasswordManagerContract;
+    } catch (e) {
+      throw new Error('PasswordManager artifact not found');
+    }
+    passwordManagerContract = PasswordManagerContract.at(
+      AztecAddress.fromString(contractAddress),
+      pxe
+    );
+  }
+
+  const owner = connectedWallet.getAddress();
+  const labelCompressed = createCompressedString(label);
+  const passwordCompressed = createCompressedString(password);
+  
+  const tx = await passwordManagerContract
+    .withWallet(connectedWallet)
+    .methods
+    .create_password_entry(labelCompressed, passwordCompressed, owner, BigInt(id), BigInt(randomness))
+    .send()
+    .wait();
+  
+  return {
+    txHash: tx.txHash ? tx.txHash.toString() : null,
+    status: tx.status,
+  };
+}
+
+async function getPasswordEntryIds(contractAddress, offset) {
+  if (!connectedWallet) {
+    throw new Error('No wallet connected');
+  }
+  
+  // Get contract instance if not already set
+  if (!passwordManagerContract || passwordManagerContract.address.toString() !== contractAddress) {
+    let PasswordManagerContract;
+    try {
+      const artifactModule = await import('../../../aztec-network/src/artifacts/PasswordManager.js');
+      PasswordManagerContract = artifactModule.PasswordManagerContract;
+    } catch (e) {
+      throw new Error('PasswordManager artifact not found');
+    }
+    passwordManagerContract = PasswordManagerContract.at(
+      AztecAddress.fromString(contractAddress),
+      pxe
+    );
+  }
+  
+  const owner = connectedWallet.getAddress();
+  const [entryIds, hasMore] = await passwordManagerContract
+    .withWallet(connectedWallet)
+    .methods
+    .get_password_entry_ids(owner, BigInt(offset))
+    .simulate();
+  
+  return {
+    entryIds: entryIds.map(id => id.toString()),
+    hasMore,
+  };
+}
+
+async function getPasswordEntryById(contractAddress, id, offset) {
+  if (!connectedWallet) {
+    throw new Error('No wallet connected');
+  }
+  
+  if (!passwordManagerContract || passwordManagerContract.address.toString() !== contractAddress) {
+    let PasswordManagerContract;
+    try {
+      const artifactModule = await import('../../../aztec-network/src/artifacts/PasswordManager.js');
+      PasswordManagerContract = artifactModule.PasswordManagerContract;
+    } catch (e) {
+      throw new Error('PasswordManager artifact not found');
+    }
+    passwordManagerContract = PasswordManagerContract.at(
+      AztecAddress.fromString(contractAddress),
+      pxe
+    );
+  }
+  
+  const owner = connectedWallet.getAddress();
+  const [label, password] = await passwordManagerContract
+    .withWallet(connectedWallet)
+    .methods
+    .get_password_entry_by_id(owner, BigInt(id), BigInt(offset))
+    .simulate();
+  
+  return {
+    label: label.value.toString(),
+    password: password.value.toString(),
+  };
+}
+
+async function updatePasswordEntry(contractAddress, label, password, id, randomness) {
+  if (!connectedWallet) {
+    throw new Error('No wallet connected');
+  }
+  
+  if (!passwordManagerContract || passwordManagerContract.address.toString() !== contractAddress) {
+    let PasswordManagerContract;
+    try {
+      const artifactModule = await import('../../../aztec-network/src/artifacts/PasswordManager.js');
+      PasswordManagerContract = artifactModule.PasswordManagerContract;
+    } catch (e) {
+      throw new Error('PasswordManager artifact not found');
+    }
+    passwordManagerContract = PasswordManagerContract.at(
+      AztecAddress.fromString(contractAddress),
+      pxe
+    );
+  }
+  
+  const owner = connectedWallet.getAddress();
+  const labelCompressed = createCompressedString(label);
+  const passwordCompressed = createCompressedString(password);
+  
+  const tx = await passwordManagerContract
+    .withWallet(connectedWallet)
+    .methods
+    .update_password_entry(labelCompressed, passwordCompressed, owner, BigInt(id), BigInt(randomness))
+    .send()
+    .wait();
+  
+  return {
+    txHash: tx.txHash ? tx.txHash.toString() : null,
+    status: tx.status,
+  };
+}
+
+async function deletePasswordEntry(contractAddress, id) {
+  if (!connectedWallet) {
+    throw new Error('No wallet connected');
+  }
+  
+  if (!passwordManagerContract || passwordManagerContract.address.toString() !== contractAddress) {
+    let PasswordManagerContract;
+    try {
+      const artifactModule = await import('../../../aztec-network/src/artifacts/PasswordManager.js');
+      PasswordManagerContract = artifactModule.PasswordManagerContract;
+    } catch (e) {
+      throw new Error('PasswordManager artifact not found');
+    }
+    passwordManagerContract = PasswordManagerContract.at(
+      AztecAddress.fromString(contractAddress),
+      pxe
+    );
+  }
+  
+  const owner = connectedWallet.getAddress();
+  const tx = await passwordManagerContract
+    .withWallet(connectedWallet)
+    .methods
+    .delete_password_entry(owner, BigInt(id))
+    .send()
+    .wait();
+  
+  return {
+    txHash: tx.txHash ? tx.txHash.toString() : null,
+    status: tx.status,
+  };
 }
 
 // Handle process termination

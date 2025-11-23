@@ -331,3 +331,98 @@ pub fn aztec_test() -> Result<serde_json::Value, String> {
     call_sidecar("test", None)
 }
 
+/// Deploy PasswordManager contract
+#[tauri::command]
+pub fn password_manager_deploy() -> Result<serde_json::Value, String> {
+    call_sidecar("deployPasswordManager", None)
+}
+
+/// Create password entry
+#[tauri::command]
+pub fn password_manager_create_entry(
+    contract_address: String,
+    label: String,
+    password: String,
+    id: u64,
+    randomness: u64,
+) -> Result<serde_json::Value, String> {
+    call_sidecar(
+        "createPasswordEntry",
+        Some(serde_json::json!({
+            "contractAddress": contract_address,
+            "label": label,
+            "password": password,
+            "id": id,
+            "randomness": randomness,
+        })),
+    )
+}
+
+/// Get password entry IDs
+#[tauri::command]
+pub fn password_manager_get_entry_ids(
+    contract_address: String,
+    offset: Option<u64>,
+) -> Result<serde_json::Value, String> {
+    call_sidecar(
+        "getPasswordEntryIds",
+        Some(serde_json::json!({
+            "contractAddress": contract_address,
+            "offset": offset.unwrap_or(0),
+        })),
+    )
+}
+
+/// Get password entry by ID
+#[tauri::command]
+pub fn password_manager_get_entry_by_id(
+    contract_address: String,
+    id: u64,
+    offset: Option<u64>,
+) -> Result<serde_json::Value, String> {
+    call_sidecar(
+        "getPasswordEntryById",
+        Some(serde_json::json!({
+            "contractAddress": contract_address,
+            "id": id,
+            "offset": offset.unwrap_or(0),
+        })),
+    )
+}
+
+/// Update password entry
+#[tauri::command]
+pub fn password_manager_update_entry(
+    contract_address: String,
+    label: String,
+    password: String,
+    id: u64,
+    randomness: u64,
+) -> Result<serde_json::Value, String> {
+    call_sidecar(
+        "updatePasswordEntry",
+        Some(serde_json::json!({
+            "contractAddress": contract_address,
+            "label": label,
+            "password": password,
+            "id": id,
+            "randomness": randomness,
+        })),
+    )
+}
+
+/// Delete password entry
+#[tauri::command]
+pub fn password_manager_delete_entry(
+    contract_address: String,
+    id: u64,
+) -> Result<serde_json::Value, String> {
+    call_sidecar(
+        "deletePasswordEntry",
+        Some(serde_json::json!({
+            "contractAddress": contract_address,
+            "id": id,
+        })),
+    )
+}
+

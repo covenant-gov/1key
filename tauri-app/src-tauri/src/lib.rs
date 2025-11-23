@@ -22,6 +22,12 @@ pub fn run() {
             commands::aztec_connect_account,
             commands::aztec_deploy_account,
             commands::aztec_test,
+            commands::password_manager_deploy,
+            commands::password_manager_create_entry,
+            commands::password_manager_get_entry_ids,
+            commands::password_manager_get_entry_by_id,
+            commands::password_manager_update_entry,
+            commands::password_manager_delete_entry,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
