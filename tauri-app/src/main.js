@@ -4,6 +4,7 @@
  */
 import { InitialScreen } from './screens/initial-screen.js';
 import { PinSetupScreen } from './screens/pin-setup-screen.js';
+import { UnlockScreen } from './screens/unlock-screen.js';
 
 class App {
   constructor() {
@@ -68,13 +69,31 @@ class App {
 
   // Show unlock screen (for existing users)
   showUnlockScreen() {
-    // TODO: Step 3 - Implement unlock screen
-    this.container.innerHTML = `
-      <div class="screen">
-        <h1>Unlock Screen</h1>
-        <p>Will be implemented in Step 3</p>
-      </div>
-    `;
+    const unlockScreen = new UnlockScreen('app');
+    unlockScreen.render();
+
+    // Handle unlock
+    unlockScreen.onUnlock = async (pin) => {
+      try {
+        console.log('Unlocking with PIN:', pin);
+        // TODO: Unlock wallet with PIN via Rust backend
+        // const wallet = await this.unlockWallet(pin);
+        
+        // For now, simulate unlock
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // After successful unlock, show main app
+        // TODO: Show password manager interface
+        alert('Wallet unlocked! (Password manager will be implemented in Step 7)');
+        unlockScreen.reset();
+      } catch (error) {
+        console.error('Failed to unlock:', error);
+        // Error will be handled by unlock screen
+        throw error;
+      }
+    };
+
+    this.currentScreen = unlockScreen;
   }
 
   // Check if account exists

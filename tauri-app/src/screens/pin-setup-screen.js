@@ -65,16 +65,8 @@ export class PinSetupScreen {
     });
     this.pinInput.render();
 
-    // Second PIN input (confirm PIN) - will be shown after first PIN is entered
-    this.confirmPinInput = new PinInput('confirm-pin-input-container', {
-      length: 6,
-      onComplete: (pin) => {
-        this.handlePinConfirmed(pin);
-      },
-      onInput: (pin, index) => {
-        this.hideError();
-      },
-    });
+    // Second PIN input (confirm PIN) - will be created fresh when needed
+    this.confirmPinInput = null;
   }
 
   // Setup event listeners
@@ -130,13 +122,37 @@ export class PinSetupScreen {
     submitBtn.style.display = 'block';
     submitBtn.textContent = 'Create Account';
 
-    // Render confirm PIN input
-    this.confirmPinInput.render();
-    
-    // Focus first box of confirm input
-    setTimeout(() => {
-      this.confirmPinInput.focusBox(0);
-    }, 100);
+    // Wait for DOM to update, then create and render confirm PIN input
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        // Verify container exists
+        const container = document.getElementById('confirm-pin-input-container');
+        if (!container) {
+          console.error('Confirm PIN container not found');
+          return;
+        }
+
+        // Create fresh confirm PIN input instance
+        this.confirmPinInput = new PinInput('confirm-pin-input-container', {
+          length: 6,
+          onComplete: (pin) => {
+            this.handlePinConfirmed(pin);
+          },
+          onInput: (pin, index) => {
+            this.hideError();
+          },
+        });
+        this.confirmPinInput.render();
+        
+        // Focus first box after rendering
+        setTimeout(() => {
+          if (this.confirmPinInput) {
+            this.confirmPinInput.focusBox(0);
+          }
+        }, 100);
+      }, 100);
+    });
 
     this.step = 'confirm';
     this.hideError();
