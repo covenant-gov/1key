@@ -3,8 +3,10 @@
  * Handles wallet creation, storage, and unlocking via Rust backend
  */
 
-// Import Tauri invoke function (window.__TAURI__.core.invoke)
-const { invoke } = window.__TAURI__.core;
+// Helper to get invoke function dynamically (for testing)
+function getInvoke() {
+  return window.__TAURI__.core.invoke;
+}
 
 export class WalletService {
   constructor() {
@@ -18,7 +20,7 @@ export class WalletService {
    */
   async walletExists() {
     try {
-      return await invoke('wallet_exists');
+      return await getInvoke()('wallet_exists');
     } catch (error) {
       console.error('Error checking wallet existence:', error);
       return false;
@@ -44,7 +46,7 @@ export class WalletService {
 
     // Encrypt and store via Rust backend
     try {
-      await invoke('encrypt_and_store_wallet', {
+      await getInvoke()('encrypt_and_store_wallet', {
         wallet: walletData,
         pin: pin,
       });
@@ -81,7 +83,7 @@ export class WalletService {
 
     try {
       // Decrypt wallet via Rust backend
-      const walletData = await invoke('decrypt_wallet_with_pin', {
+      const walletData = await getInvoke()('decrypt_wallet_with_pin', {
         pin: pin,
       });
 
@@ -132,7 +134,7 @@ export class WalletService {
    */
   async deleteWallet() {
     try {
-      await invoke('delete_wallet');
+      await getInvoke()('delete_wallet');
       this.lockWallet();
     } catch (error) {
       console.error('Error deleting wallet:', error);
