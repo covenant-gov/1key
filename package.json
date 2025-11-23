@@ -12,6 +12,8 @@
     "dev:aztec": "cd aztec-network && yarn test",
     "dev:tauri": "cd tauri-app && yarn tauri dev",
     "test:aztec": "cd aztec-network && yarn test",
+    "test:aztec:nr": "cd aztec-network && yarn test:nr",
+    "test:aztec:js": "cd aztec-network && yarn test:js",
     "clean:aztec": "cd aztec-network && yarn clean",
     "clean:tauri": "rm -rf tauri-app/src-tauri/target tauri-app/src-tauri/gen",
     "clean": "yarn clean:aztec && yarn clean:tauri"

@@ -164,6 +164,35 @@ pub contract PasswordManager {
       (ids, page_limit_reached)
     }
 
+    /// @notice Retrieves a password entry by ID
+    /// @dev Returns the label and password of the password entry
+    /// @param owner The address of the owner of the password entry
+    /// @param id The unique identifier of the password entry to retrieve
+    /// @return A tuple containing the label and password of the password entry
+    #[external("utility")]
+    unconstrained fn get_password_entry_by_id(
+      owner: AztecAddress,
+      id: Field,
+      page_index: u32,
+    ) -> (FieldCompressedString, FieldCompressedString) {
+      let offset = page_index * MAX_NOTES_PER_PAGE;
+      let mut options = NoteViewerOptions::new();
+      let passwords = storage.password_entries.at(owner).view_notes(options.set_offset(offset));
+      // Initialize with empty strings (will be overwritten if entry is found)
+      let mut label = FieldCompressedString::from_string("                               ");
+      let mut password = FieldCompressedString::from_string("                               ");
+      for i in 0..options.limit {
+        if i < passwords.len() {
+          if (passwords.get_unchecked(i).get_id() == id) {
+            label = passwords.get_unchecked(i).get_label();
+            password = passwords.get_unchecked(i).get_password();
+            break;
+          }
+        }
+      }
+      (label, password)
+    }
+
     /// @notice Retrieves a paginated list of shared password entry IDs for a recipient
     /// @dev Returns an array of password entry IDs that have been shared with the recipient
     /// @param recipient The address of the recipient whose shared password entry IDs to retrieve
@@ -212,6 +241,35 @@ pub contract PasswordManager {
       }
       let page_limit_reached = passwords.len() == options.limit;
       (ids, page_limit_reached)
+    }
+
+    /// @notice Retrieves a shared password entry by ID
+    /// @dev Returns the label and password of the shared password entry
+    /// @param recipient The address of the recipient of the shared password entry
+    /// @param id The unique identifier of the shared password entry to retrieve
+    /// @return A tuple containing the label and password of the shared password entry
+    #[external("utility")]
+    unconstrained fn get_shared_password_entry_by_id(
+      recipient: AztecAddress,
+      id: Field,
+      page_index: u32,
+    ) -> (FieldCompressedString, FieldCompressedString) {
+      let offset = page_index * MAX_NOTES_PER_PAGE;
+      let mut options = NoteViewerOptions::new();
+      let passwords = storage.shared_password_entries.at(recipient).view_notes(options.set_offset(offset));
+      // Initialize with empty strings (will be overwritten if entry is found)
+      let mut label = FieldCompressedString::from_string("                               ");
+      let mut password = FieldCompressedString::from_string("                               ");
+      for i in 0..options.limit {
+        if i < passwords.len() {
+          if (passwords.get_unchecked(i).get_id() == id) {
+            label = passwords.get_unchecked(i).get_label();
+            password = passwords.get_unchecked(i).get_password();
+            break;
+          }
+        }
+      }
+      (label, password)
     }
 
     /** ==========================================================
